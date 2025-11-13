@@ -1,0 +1,106 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta http-equiv="refresh" content="5; url=cbt.html">
+<title>Preloader</title>
+<style>
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+
+  /* --- Fullscreen overlay --- */
+  #preloader {
+    position: fixed;
+    inset: 0;
+    width: 100%;
+    height: 100%;
+    background: radial-gradient(circle at center, #fff 20%, #fff 100%);
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+    z-index: 9999;
+    transition: opacity 0.8s ease, visibility 0.8s ease;
+  }
+
+  #preloader.hide {
+    opacity: 0;
+    visibility: hidden;
+  }
+
+  /* --- Logo animation --- */
+  .logo-loader {
+    width: 120px;
+    animation: pulse 1.6s infinite ease-in-out;
+  }
+
+  @keyframes pulse {
+    0%, 100% { transform: scale(1); opacity: 1; }
+    50% { transform: scale(1.15); opacity: 0.6; }
+  }
+
+  /* --- Loading text --- */
+  .loading-text {
+    color: #fff;
+    font-family: "Poppins", sans-serif;
+    letter-spacing: 2px;
+    margin-top: 1rem;
+    font-size: 1rem;
+    text-transform: uppercase;
+    opacity: 0.8;
+  }
+
+  /* --- Page content hidden initially --- */
+  body.loaded main {
+    visibility: visible;
+    opacity: 1;
+    transition: opacity 0.8s ease;
+  }
+
+  main {
+    visibility: hidden;
+    opacity: 0;
+    padding: 3rem;
+    text-align: center;
+    font-family: "Segoe UI", sans-serif;
+    color: #222;
+  }
+</style>
+</head>
+<body>
+
+<!-- ✅ SERVER-SIDE PRELOADER -->
+<div id="preloader">
+  <img class="logo-loader" src="./icon.png" alt="Loading...">
+</div>
+
+<script>
+/*
+ * Server-Side Smart Preloader:
+ * - Waits for window load or server signal.
+ * - Uses fade-out + visibility transition.
+ * - Automatically hides when server finishes rendering.
+ */
+
+window.addEventListener("load", () => {
+  const preloader = document.getElementById("preloader");
+  const body = document.body;
+
+  // Add a slight delay for visual polish
+  setTimeout(() => {
+    preloader.classList.add("hide");
+    body.classList.add("loaded");
+  }, 4000);
+});
+
+// Optional: if backend sends a "ready" event via JS injection
+// (For frameworks like Flask or Node with streaming templates)
+window.serverReady = function() {
+  const preloader = document.getElementById("preloader");
+  document.body.classList.add("loaded");
+  preloader.classList.add("hide");
+};
+</script>
+
+</body>
+</html>

@@ -1,0 +1,624 @@
+<!DOCTYPE html><html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>CBT</title>
+<style>
+:root {
+  --bg: #ffffff;
+  --text: #1E90FF;
+  --input-bg: #1E90FF;
+  --input-text: #ffffff;
+  --placeholder: #ccc;
+  --accent: #1E90FF;
+  --status-warn: #ffb400;
+  --status-error: #ff4444;
+  --status-ok: #1E90FF;
+}[data-theme="dark"] { --bg: black; --text: #1E90FF; --input-bg: #1E90FF; --input-text: #222; --placeholder: #222; --accent: #87CEFA; --status-warn: #ffd24d; --status-error: #ff6666; --status-ok: #6ab8ff; }
+
+body { background: var(--bg); color: var(--text); font-family: "Segoe UI", Arial, sans-serif; margin: 0; padding: 0; min-height: 100vh; display: flex; flex-direction: column; justify-content: center; align-items: center; text-align: center; padding: 0 12px; }
+
+.container { max-width: 900px; margin: 20px auto; background: #fff; padding: 30px; border-radius: 12px; box-shadow: 0 6px 15px rgba(0,0,0,0.15); } h1 { text-align: center; margin-bottom: 20px; } .question { margin-bottom: 25px; padding: 15px; background: #f7f9fb; border-radius: 8px; } .answers label { display: block; margin-bottom: 8px; cursor: pointer; } button { padding: 12px 25px; background-color: #007BFF; color: #fff; border: none; border-radius: 5px; cursor: pointer; margin-right: 10px; font-weight: bold; } button:hover { background-color: #0056b3; } .result { font-weight: bold; margin-top: 25px; font-size: 18px; text-align:center; } .correct { color: green; font-weight: bold; } .incorrect { color: red; font-weight: bold; } .explanation { margin-top: 5px; font-style: italic; color: #333; } #timer { font-size: 20px; font-weight: bold; margin-bottom: 20px; text-align: center; color: #ff4500; } #navButtons { text-align: center; margin-top: 20px; } .logo { width: clamp(150px, 60%, 260px); height: auto; margin-bottom: 1rem; transition: opacity .3s ease; } .footer { width: 100%; text-align: center; padding: 10px 0; font-size: 0.9rem; opacity: 0.85; position: fixed; bottom: 5px; } .theme-toggle { position: fixed; top: 12px; right: 12px; background: none; border: 2px solid var(--text); border-radius: 50%; padding: 10px; font-size: 18px; cursor: pointer; color: var(--text); transition: 0.3s; z-index: 10; } .theme-toggle:hover { background: var(--text); color: var(--bg); }
+  a {
+  color: var(--accent);       /* uses the theme accent color */
+  text-decoration: none;      /* optional: remove underline */
+  transition: color 0.3s ease;
+}
+
+a:hover {
+  color: var(--text);         /* changes on hover */
+  text-decoration: underline; /* optional hover effect */
+}
+  </style>
+
+</head>
+<body>
+<button class="theme-toggle" onclick="toggleTheme()">🌓</button>
+<a href="./index.html">
+  <img src="./logo.png" alt="Abstrya Logo" class="logo" />
+</a>
+  <div class="container">
+<div id="timer">Time Left: 60:00</div>
+<div id="quiz"></div>
+<div id="navButtons">
+  <button id="prev">Previous</button>
+  <button id="next">Next</button>
+  <button id="submit" style="display:none;">Submit Answers</button>
+  <button id="backToScore" style="display:none;">Back to Score</button>
+  <button id="retry" style="display:none; ">Retry Exam</button>
+</div>
+<div id="result" class="result"></div>
+<center><br/><br/><button id="retry" style="display:none;">Retry Exam</button></center>
+</div>
+  <script>
+let quizData = [
+  { 
+    question: 'What is the main purpose of a student union in a university?', 
+    options: ['Organize social events','Advocate for student rights','Manage university finances','Conduct lectures'], 
+    answer: 1, 
+    explanation: 'Student unions primarily exist to represent and advocate for the rights and interests of students on campus.' 
+  },
+  { 
+    question: 'Which of these is considered an essential service in a campus library?', 
+    options: ['Sports coaching','Book lending','Canteen services','Hostel management'], 
+    answer: 1, 
+    explanation: 'A campus library’s essential service is to lend books and provide study materials to students.' 
+  },
+  { 
+    question: 'What is the common mode of communication for official university announcements?', 
+    options: ['Campus radio','Notice boards and emails','Social media posts','Word of mouth'], 
+    answer: 1, 
+    explanation: 'Official announcements are typically made via notice boards, university emails, or official portals.' 
+  },
+  { 
+    question: 'Which student activity promotes academic collaboration?', 
+    options: ['Sports competitions','Study groups','Music concerts','Drama clubs'], 
+    answer: 1, 
+    explanation: 'Study groups encourage students to collaborate academically and improve learning outcomes.' 
+  },
+  { 
+    question: 'What is the purpose of a campus counseling center?', 
+    options: ['Offer financial aid','Provide psychological support','Organize festivals','Manage exams'], 
+    answer: 1, 
+    explanation: 'Campus counseling centers provide psychological and emotional support to students for wellbeing and academic success.' 
+  },
+  { question: 'When did Nigeria gain independence from Britain?', options: ['1960','1957','1963','1970'], answer: 0, explanation: 'Nigeria gained independence on October 1, 1960.' },
+  { question: 'Who was the first Prime Minister of Nigeria?', options: ['Abubakar Tafawa Balewa','Nnamdi Azikiwe','Olusegun Obasanjo','Goodluck Jonathan'], answer: 0, explanation: 'Sir Abubakar Tafawa Balewa was the first Prime Minister of Nigeria.' },
+  { question: 'Who became the first President of Nigeria in 1963?', options: ['Nnamdi Azikiwe','Abubakar Tafawa Balewa','Olusegun Obasanjo','Shehu Shagari'], answer: 0, explanation: 'Nnamdi Azikiwe became the first President when Nigeria became a republic in 1963.' },
+  { question: 'What year did the Nigerian Civil War start?', options: ['1967','1966','1970','1960'], answer: 0, explanation: 'The Nigerian Civil War started in 1967 and ended in 1970.' },
+  { question: 'Which region attempted to secede during the Nigerian Civil War?', options: ['Biafra','Kano','Lagos','Kaduna'], answer: 0, explanation: 'The Eastern Region declared itself as the Republic of Biafra.' },
+  { question: 'Who was the military leader that ended the Nigerian Civil War?', options: ['Yakubu Gowon','Murtala Mohammed','Olusegun Obasanjo','Muhammadu Buhari'], answer: 0, explanation: 'General Yakubu Gowon was Nigeria’s head of state during the Civil War and led to its end.' },
+  { question: 'When was the first military coup in Nigeria?', options: ['1966','1960','1975','1983'], answer: 0, explanation: 'The first military coup occurred in January 1966.' },
+  { question: 'Who led the first military coup in Nigeria?', options: ['Major Chukwuma Kaduna Nzeogwu','Yakubu Gowon','Murtala Mohammed','Olusegun Obasanjo'], answer: 0, explanation: 'Major Chukwuma Kaduna Nzeogwu led the first military coup in Nigeria.' },
+  { question: 'When was Nigeria declared a republic?', options: ['1963','1960','1966','1979'], answer: 0, explanation: 'Nigeria became a republic on October 1, 1963.' },
+  { question: 'Which constitution was adopted at independence in 1960?', options: ['Independence Constitution','Lyttleton Constitution','Macpherson Constitution','Richard Constitution'], answer: 0, explanation: 'The 1960 Independence Constitution was adopted at independence.' },
+  { question: 'Who was the first military head of state in Nigeria?', options: ['Johnson Aguiyi-Ironsi','Yakubu Gowon','Murtala Mohammed','Olusegun Obasanjo'], answer: 0, explanation: 'General Johnson Aguiyi-Ironsi became Nigeria’s first military head of state after the 1966 coup.' },
+  { question: 'Which leader initiated the oil boom period in Nigeria?', options: ['Yakubu Gowon','Nnamdi Azikiwe','Abubakar Tafawa Balewa','Shehu Shagari'], answer: 0, explanation: 'The oil boom period in Nigeria started during Yakubu Gowon’s regime after the Civil War.' },
+  { question: 'When did Nigeria transition to civilian rule after the first military era?', options: ['1979','1975','1983','1993'], answer: 0, explanation: 'Nigeria returned to civilian rule in 1979 with Shehu Shagari as president.' },
+  { question: 'Who was the president of Nigeria during the Second Republic?', options: ['Shehu Shagari','Olusegun Obasanjo','Muhammadu Buhari','Goodluck Jonathan'], answer: 0, explanation: 'Shehu Shagari was the president during Nigeria’s Second Republic (1979–1983).' },
+  { question: 'When did the military overthrow Shehu Shagari’s government?', options: ['1983','1979','1993','1985'], answer: 0, explanation: 'The military overthrew the Second Republic government on December 31, 1983.' },
+  { question: 'Who led the military coup in 1983?', options: ['Muhammadu Buhari','Olusegun Obasanjo','Ibrahim Babangida','Sani Abacha'], answer: 0, explanation: 'Major General Muhammadu Buhari led the 1983 military coup.' },
+  { question: 'Which leader initiated Structural Adjustment Program (SAP) in Nigeria?', options: ['Ibrahim Babangida','Muhammadu Buhari','Olusegun Obasanjo','Shehu Shagari'], answer: 0, explanation: 'General Ibrahim Babangida initiated SAP in the 1980s.' },
+  { question: 'When was the Fourth Republic of Nigeria inaugurated?', options: ['1999','1993','1979','1983'], answer: 0, explanation: 'Nigeria’s Fourth Republic began on May 29, 1999, with Olusegun Obasanjo as president.' },
+  { question: 'Who was Nigeria’s first civilian president of the Fourth Republic?', options: ['Olusegun Obasanjo','Goodluck Jonathan','Muhammadu Buhari','Shehu Shagari'], answer: 0, explanation: 'Olusegun Obasanjo became president in 1999, starting the Fourth Republic.' },
+  { question: 'Which leader introduced the Economic Recovery and Growth Plan (ERGP)?', options: ['Muhammadu Buhari','Goodluck Jonathan','Olusegun Obasanjo','Ibrahim Babangida'], answer: 0, explanation: 'President Muhammadu Buhari introduced ERGP during his administration to revive Nigeria’s economy.' },
+  { question: 'Who was Nigeria’s first female cabinet minister?', options: ['Chief (Mrs.) Margaret Ekpo','Funmilayo Ransome-Kuti','Ngozi Okonjo-Iweala','Aisha Buhari'], answer: 0, explanation: 'Chief Margaret Ekpo became one of the first female ministers in Nigeria.' },
+  { question: 'The amalgamation of Northern and Southern Nigeria occurred in which year?', options: ['1914','1900','1922','1930'], answer: 0, explanation: 'Lord Lugard amalgamated Northern and Southern Nigeria in 1914.' },
+  { question: 'Which company dominated the palm oil trade in colonial Nigeria?', options: ['United African Company','Shell','Total','Chevron'], answer: 0, explanation: 'The United African Company dominated palm oil trade during colonial times.' },
+  { question: 'Who led Nigeria during World War II?', options: ['Colonial Governors','Nnamdi Azikiwe','Abubakar Tafawa Balewa','Olusegun Obasanjo'], answer: 0, explanation: 'Colonial Governors led Nigeria during WWII as it was under British rule.' },
+  { question: 'Who is considered the “Father of Nigerian Nationalism”?', options: ['Nnamdi Azikiwe','Obafemi Awolowo','Ahmadu Bello','Abubakar Tafawa Balewa'], answer: 0, explanation: 'Nnamdi Azikiwe is widely regarded as the Father of Nigerian Nationalism.' },
+  { question: 'Who founded the National Council of Nigeria and the Cameroons (NCNC)?', options: ['Nnamdi Azikiwe','Obafemi Awolowo','Ahmadu Bello','Herbert Macaulay'], answer: 0, explanation: 'Nnamdi Azikiwe founded NCNC to advocate for Nigerian independence.' },
+  { question: 'When was the Lagos Colony annexed to Nigeria?', options: ['1861','1914','1898','1901'], answer: 0, explanation: 'Britain annexed Lagos Colony in 1861.' },
+  { question: 'Who was the first Premier of the Western Region?', options: ['Obafemi Awolowo','Ahmadu Bello','Nnamdi Azikiwe','Abubakar Tafawa Balewa'], answer: 0, explanation: 'Obafemi Awolowo became the first Premier of Western Nigeria.' },
+  { question: 'Ahmadu Bello was the Premier of which region?', options: ['Northern Region','Western Region','Eastern Region','Mid-Western Region'], answer: 0, explanation: 'Ahmadu Bello served as the Premier of Northern Nigeria.' },
+  { question: 'What year did Nigeria become a member of the United Nations?', options: ['1960','1957','1963','1965'], answer: 0, explanation: 'Nigeria became a UN member upon independence in 1960.' },
+  { question: 'The famous Aba Women’s Riot occurred in which year?', options: ['1929','1930','1918','1935'], answer: 0, explanation: 'The Aba Women’s Riot was a protest in 1929 against colonial taxation.' },
+  { question: 'Who led the 1929 Aba Women’s Riot?', options: ['Nwanyeruwa','Funmilayo Ransome-Kuti','Margaret Ekpo','Chinua Achebe'], answer: 0, explanation: 'Nwanyeruwa was one of the leaders of the Aba Women’s Riot.' },
+  { question: 'Who was Nigeria’s first Minister of Finance?', options: ['Festus Okotie-Eboh','Nnamdi Azikiwe','Obafemi Awolowo','Ahmadu Bello'], answer: 0, explanation: 'Festus Okotie-Eboh served as the first Finance Minister of Nigeria.' },
+  { question: 'When was the University of Ibadan established?', options: ['1948','1960','1951','1945'], answer: 0, explanation: 'University of Ibadan was established in 1948 as the first university in Nigeria.' },
+  { question: 'Who was the leader of the Action Group?', options: ['Obafemi Awolowo','Nnamdi Azikiwe','Ahmadu Bello','Abubakar Tafawa Balewa'], answer: 0, explanation: 'Obafemi Awolowo led the Action Group political party in Western Nigeria.' },
+  { question: 'Which ethnic group mainly occupied the Northern Region?', options: ['Hausa-Fulani','Yoruba','Igbo','Ijaw'], answer: 0, explanation: 'The Northern Region was predominantly Hausa-Fulani.' },
+  { question: 'The first television station in Nigeria was established in?', options: ['1959','1960','1962','1955'], answer: 0, explanation: 'Western Nigeria Television Service (WNTV) was established in 1959.' },
+  { question: 'Who was the leader of the NCNC in Eastern Nigeria?', options: ['Nnamdi Azikiwe','Obafemi Awolowo','Ahmadu Bello','Abubakar Tafawa Balewa'], answer: 0, explanation: 'Nnamdi Azikiwe led NCNC in Eastern Nigeria.' },
+  { question: 'Nigeria became a republic under which constitution?', options: ['1963 Republican Constitution','1960 Independence Constitution','1979 Constitution','1999 Constitution'], answer: 0, explanation: 'Nigeria became a republic in 1963 under the Republican Constitution.' },
+  { question: 'The Mid-Western Region was created in which year?', options: ['1963','1967','1976','1960'], answer: 1, explanation: 'The Mid-Western Region was created in 1967 from the Western Region.' },
+  { question: 'Who led Nigeria after the assassination of Aguiyi-Ironsi?', options: ['Yakubu Gowon','Murtala Mohammed','Olusegun Obasanjo','Sani Abacha'], answer: 0, explanation: 'General Yakubu Gowon became head of state after Aguiyi-Ironsi’s assassination.' },
+  { question: 'The “Operation Feed the Nation” program was introduced by?', options: ['Shehu Shagari','Muhammadu Buhari','Olusegun Obasanjo','Ibrahim Babangida'], answer: 0, explanation: 'Shehu Shagari introduced OFN to boost food production in Nigeria.' },
+  { question: 'Nigeria became a member of the Commonwealth of Nations in?', options: ['1960','1963','1957','1970'], answer: 0, explanation: 'Nigeria joined the Commonwealth in 1960 upon independence.' },
+  { question: 'Which movement opposed colonial taxation in Nigeria?', options: ['Aba Women’s Riot','NCNC','Action Group','National Council'], answer: 0, explanation: 'The Aba Women’s Riot opposed colonial taxation in southeastern Nigeria.' },
+  { question: 'Who became the military ruler of Nigeria after the 1975 coup?', options: ['Murtala Mohammed','Yakubu Gowon','Olusegun Obasanjo','Ibrahim Babangida'], answer: 0, explanation: 'Murtala Mohammed became head of state after the 1975 coup.' },
+  { question: 'Who completed the transition to civilian rule in 1979?', options: ['Olusegun Obasanjo','Shehu Shagari','Muhammadu Buhari','Goodluck Jonathan'], answer: 0, explanation: 'Olusegun Obasanjo handed over power to Shehu Shagari in 1979.' },
+  { question: 'The Nigerian Senate and House of Representatives were first created under?', options: ['1960 Constitution','1963 Constitution','1979 Constitution','1999 Constitution'], answer: 0, explanation: 'The 1960 Constitution established the Nigerian legislature.' },
+  { question: 'Who was the military ruler of Nigeria in 1993?', options: ['Ibrahim Babangida','Sani Abacha','Olusegun Obasanjo','Muhammadu Buhari'], answer: 0, explanation: 'Ibrahim Babangida was Nigeria’s military ruler in 1993.' }, 
+  { question: 'What does CDCFIB stand for?', options: ['Civil Defence, Correctional, Fire & Immigration Board','Central Defence and Fire Intelligence Board','Civil Defence and Federal Investigation Bureau','Correctional, Defence, Fire & Immigration Board'], answer: 0, explanation: 'CDCFIB stands for Civil Defence, Correctional, Fire & Immigration Board, which supervises multiple security agencies.' },
+  { question: 'Which of the following agencies is under CDCFIB supervision?', options: ['NSCDC','Nigeria Police Force','Nigerian Army','Economic and Financial Crimes Commission'], answer: 0, explanation: 'The NSCDC is supervised by CDCFIB alongside Immigration, Correctional, and Fire services.' },
+  { question: 'The NSCDC was originally established in which year?', options: ['1967','1965','1979','1984'], answer: 3, explanation: 'NSCDC was established in 1984 to protect lives and property in Nigeria.' },
+  { question: 'Which agency under CDCFIB handles fire emergencies?', options: ['Federal Fire Service','NSCDC','Immigration Service','Correctional Service'], answer: 0, explanation: 'The Federal Fire Service is responsible for fire prevention and emergency response under CDCFIB.' },
+  { question: 'Who is responsible for supervising the Nigerian Correctional Service?', options: ['CDCFIB','Ministry of Justice','NSCDC','Nigeria Police Force'], answer: 0, explanation: 'CDCFIB oversees the Correctional Service to ensure proper functioning of prisons and rehabilitation.' },
+  { question: 'Which ministry is CDCFIB under?', options: ['Ministry of Interior','Ministry of Defence','Ministry of Justice','Ministry of Security'], answer: 0, explanation: 'CDCFIB operates under the Ministry of Interior to coordinate internal security agencies.' },
+  { question: 'Which agency under CDCFIB handles immigration?', options: ['Nigeria Immigration Service','NSCDC','Federal Fire Service','Correctional Service'], answer: 0, explanation: 'Nigeria Immigration Service manages border control and citizenship matters under CDCFIB.' },
+  { question: 'The motto of NSCDC is?', options: ['Defending the Defenceless','Peace and Security','Integrity and Discipline','Service and Honour'], answer: 0, explanation: '“Defending the Defenceless” is the official motto of NSCDC.' },
+  { question: 'CDCFIB was last renamed in which year?', options: ['2003','2011','1992','2015'], answer: 1, explanation: 'The board was last renamed in 2011 to Civil Defence, Correctional, Fire & Immigration Board.' },
+  { question: 'The headquarters of NSCDC is located in?', options: ['Abuja','Lagos','Kano','Port Harcourt'], answer: 0, explanation: 'The NSCDC headquarters is located in Abuja, Nigeria.' },
+  { question: 'Which CDCFIB agency manages prison facilities?', options: ['Nigeria Correctional Service','NSCDC','Immigration Service','Federal Fire Service'], answer: 0, explanation: 'Nigeria Correctional Service manages prisons and rehabilitation centers.' },
+  { question: 'Who appoints the board members of CDCFIB?', options: ['President of Nigeria','Minister of Interior','NSCDC Commandant','National Assembly'], answer: 0, explanation: 'The President of Nigeria appoints CDCFIB board members.' },
+  { question: 'NSCDC is primarily responsible for?', options: ['Protecting lives and property','Law enforcement only','Border control','Fire emergencies only'], answer: 0, explanation: 'NSCDC protects lives and property in Nigeria, including disaster prevention and security.' },
+  { question: 'Which CDCFIB agency conducts fire safety inspections?', options: ['Federal Fire Service','NSCDC','Correctional Service','Immigration Service'], answer: 0, explanation: 'Federal Fire Service inspects public and private buildings for fire safety compliance.' },
+  { question: 'The NSCDC was formed to supplement which force?', options: ['Nigeria Police Force','Nigerian Army','Immigration Service','Correctional Service'], answer: 0, explanation: 'NSCDC was formed to support the Nigeria Police Force in protecting lives and property.' },
+  { question: 'Federal Fire Service is under which ministry?', options: ['Ministry of Interior','Ministry of Defence','Ministry of Environment','Ministry of Labour'], answer: 0, explanation: 'The Federal Fire Service is supervised by the Ministry of Interior through CDCFIB.' },
+  { question: 'The Immigration Service issues which of the following?', options: ['Passports','National ID','Driver’s License','Voter’s Card'], answer: 0, explanation: 'Nigeria Immigration Service issues passports and manages border control.' },
+  { question: 'CDCFIB ensures coordination between which types of agencies?', options: ['Security and emergency agencies','Education and health agencies','Finance and trade agencies','Foreign affairs agencies'], answer: 0, explanation: 'CDCFIB coordinates agencies responsible for security, fire, correctional, and immigration services.' },
+  { question: 'Who heads the NSCDC?', options: ['Commandant General','Minister of Interior','President','Inspector General'], answer: 0, explanation: 'The Commandant General is the head of the NSCDC.' },
+  { question: 'The primary goal of CDCFIB is?', options: ['Internal security coordination','Foreign policy enforcement','Trade regulation','Judicial administration'], answer: 0, explanation: 'CDCFIB’s main goal is to coordinate internal security agencies.' },
+  { question: 'NSCDC personnel are trained in?', options: ['Disaster management and public safety','Tax administration','Foreign diplomacy','Civil engineering'], answer: 0, explanation: 'NSCDC officers are trained in disaster management, public safety, and emergency response.' },
+  { question: 'Correctional officers in Nigeria are supervised by?', options: ['Nigeria Correctional Service under CDCFIB','NSCDC','Nigeria Police Force','Federal Fire Service'], answer: 0, explanation: 'Correctional officers operate under Nigeria Correctional Service, which is supervised by CDCFIB.' },
+  { question: 'Federal Fire Service provides which services?', options: ['Fire fighting and safety education','Police operations','Border control','Correctional oversight'], answer: 0, explanation: 'Federal Fire Service handles fire emergencies and public education on safety.' },
+  { question: 'Immigration Service enforces?', options: ['Border security and residency','Fire safety','Prison management','Civil protection'], answer: 0, explanation: 'Immigration Service enforces border security, visas, and residency permits.' },
+  { question: 'NSCDC can collaborate with which agencies?', options: ['Police, Fire, and Disaster Agencies','Education boards','Finance institutions','Trade unions'], answer: 0, explanation: 'NSCDC collaborates with police, fire services, and other disaster agencies for public safety.' },
+  { question: 'Which board oversees Federal Fire Service, Immigration, Correctional Service, and NSCDC?', options: ['CDCFIB','Ministry of Defence','National Security Council','EFCC'], answer: 0, explanation: 'CDCFIB supervises all these agencies.' },
+  { question: 'CDCFIB was established to ensure?', options: ['Efficient management of internal security agencies','Better education','Foreign relations','Economic policy'], answer: 0, explanation: 'CDCFIB ensures effective management and coordination of Nigeria’s internal security agencies.' },
+  { question: 'NSCDC officers carry out which primary function?', options: ['Protecting lives, property, and critical infrastructure','Issuing passports','Managing prisons','Fire fighting only'], answer: 0, explanation: 'NSCDC protects lives, property, and critical infrastructure across Nigeria.' },
+  { question: 'Federal Fire Service responds to which emergencies?', options: ['Fire outbreaks and accidents','Bank fraud','Immigration violations','Prison disturbances'], answer: 0, explanation: 'Federal Fire Service responds to fires and related emergencies.' },
+  { question: 'Immigration Service controls?', options: ['Borders and entry points','Fire hazards','Police deployment','Correctional facilities'], answer: 0, explanation: 'Immigration Service manages borders and entry points in Nigeria.' },
+  { question: 'Who can approve promotions in NSCDC?', options: ['Commandant General','Minister of Interior','President','Inspector General of Police'], answer: 0, explanation: 'The Commandant General approves promotions within NSCDC.' },
+  { question: 'The motto of the Federal Fire Service is?', options: ['Fire and Life Protection','Defending the Defenceless','Peace and Security','Service and Honour'], answer: 0, explanation: '“Fire and Life Protection” is the official motto of Federal Fire Service.' },
+  { question: 'CDCFIB coordinates agencies to prevent?', options: ['Internal threats and disasters','Foreign invasions','Trade fraud','Political campaigns'], answer: 0, explanation: 'CDCFIB coordinates agencies to prevent internal threats, disasters, and protect lives.' },
+  { question: 'NSCDC was initially formed to supplement?', options: ['Nigeria Police Force','Immigration Service','Correctional Service','Federal Fire Service'], answer: 0, explanation: 'NSCDC was formed to support Nigeria Police in maintaining public order and safety.' },
+  { question: 'Federal Fire Service is responsible for?', options: ['Fire safety education and rescue operations','Immigration','Correctional facility oversight','Police investigations'], answer: 0, explanation: 'Federal Fire Service educates the public on fire safety and conducts rescue operations.' },
+  { question: 'CDCFIB reports to?', options: ['Minister of Interior','President','Senate','NSCDC Commandant'], answer: 0, explanation: 'CDCFIB reports to the Minister of Interior, who oversees internal security agencies.' },
+  { question: 'NSCDC headquarters is located in which city?', options: ['Abuja','Lagos','Kano','Port Harcourt'], answer: 0, explanation: 'The NSCDC headquarters is in Abuja, Nigeria.' },
+  { question: 'Immigration Service handles?', options: ['Visa issuance and passport control','Correctional services','Fire safety','Police training'], answer: 0, explanation: 'Immigration Service manages visas, passports, and border entry.' },
+  { question: 'CDCFIB ensures which agencies work together?', options: ['Fire, Correctional, Immigration, NSCDC','Police only','Army only','Trade agencies only'], answer: 0, explanation: 'CDCFIB ensures collaboration among Fire, Correctional, Immigration services, and NSCDC.' },
+  { question: 'NSCDC officers are empowered to?', options: ['Protect lives, enforce civil protection laws, and assist in disasters','Issue driving licenses','Conduct banking operations','Manage education exams'], answer: 0, explanation: 'NSCDC officers protect lives, enforce civil protection laws, and assist in disaster management.' },
+  { question: 'Who is the appointing authority for the Commandant General of NSCDC?', options: ['President of Nigeria','Minister of Interior','Senate','National Assembly'], answer: 0, explanation: 'The President appoints the Commandant General of NSCDC.' },
+  { question: 'The main function of the Correctional Service under CDCFIB is?', options: ['Rehabilitation and custody of offenders','Fire safety','Border control','Disaster management'], answer: 0, explanation: 'The Correctional Service is responsible for the custody and rehabilitation of offenders in Nigeria.' },
+  { question: 'Federal Fire Service officers are trained in?', options: ['Fire fighting, rescue, and disaster response','Passport control','Prison management','Bank audits'], answer: 0, explanation: 'Federal Fire Service officers are trained in fire fighting, rescue, and disaster response.' },
+  { question: 'The mission of CDCFIB is?', options: ['To ensure effective coordination of internal security agencies','To manage education policy','To oversee banking operations','To conduct elections'], answer: 0, explanation: 'CDCFIB’s mission is to ensure internal security agencies operate efficiently and coordinate effectively.' },
+  { question: 'Immigration Service enforces which laws?', options: ['Immigration, entry, and residency laws','Fire safety regulations','Correctional laws','Civil defense policies'], answer: 0, explanation: 'Immigration Service enforces immigration, border entry, and residency laws.' },
+  { question: 'NSCDC collaborates with which organization for disaster response?', options: ['National Emergency Management Agency (NEMA)','EFCC','Central Bank','Ministry of Education'], answer: 0, explanation: 'NSCDC collaborates with NEMA for disaster response and management.' },
+  { question: 'CDCFIB’s main oversight responsibility is?', options: ['Internal security agencies','Foreign policy','Education system','Healthcare services'], answer: 0, explanation: 'CDCFIB oversees Nigeria’s internal security agencies for efficient operation.' },
+  { question: 'NSCDC also engages in?', options: ['Community policing and awareness programs','Banking','Education exams','Trade regulation'], answer: 0, explanation: 'NSCDC officers engage in community policing and public awareness programs to enhance safety.' }, 
+  { question: 'Which Nigerian state launched the “Clean Rivers Project” in 2025 to reduce pollution?', options: ['Rivers','Lagos','Delta','Bayelsa'], answer: 0, explanation: 'Rivers State launched the “Clean Rivers Project” in 2025 to reduce water pollution and environmental degradation.' },
+  { question: 'In 2025, which Nigerian university was ranked highest in Africa for innovation?', options: ['University of Lagos','Covenant University','Obafemi Awolowo University','Ahmadu Bello University'], answer: 1, explanation: 'Covenant University was ranked the highest in Africa for innovation in 2025.' },
+  { question: 'Who is the current Governor of Lagos State (2025)?', options: ['Babajide Sanwo-Olu','Bola Tinubu','Akinwunmi Ambode','Lai Mohammed'], answer: 0, explanation: 'Babajide Sanwo-Olu is serving as the Governor of Lagos State in 2025.' },
+  { question: 'Nigeria signed a trade agreement with which Asian country in 2025 to boost exports?', options: ['China','Japan','India','South Korea'], answer: 2, explanation: 'Nigeria signed a trade agreement with India in 2025 to boost exports of agricultural and industrial goods.' },
+  { question: 'Which Nigerian airline launched new domestic routes in 2025?', options: ['Air Peace','Arik Air','Dana Air','Med-View Air'], answer: 0, explanation: 'Air Peace expanded its domestic network with new routes in 2025.' },
+  { question: 'In 2025, which tech startup in Nigeria became the first to reach unicorn status?', options: ['Flutterwave','Paystack','Interswitch','Andela'], answer: 0, explanation: 'Flutterwave became Nigeria’s first tech unicorn in 2025.' },
+  { question: 'Which Nigerian city hosted the 2025 National Economic Summit?', options: ['Abuja','Lagos','Kano','Port Harcourt'], answer: 0, explanation: 'Abuja hosted the 2025 National Economic Summit.' },
+  { question: 'In 2025, Nigeria discovered oil in which new basin?', options: ['Benue Trough','Anambra Basin','Niger Delta Deep Offshore','Chad Basin'], answer: 2, explanation: 'Nigeria discovered new oil reserves in the Niger Delta Deep Offshore Basin in 2025.' },
+  { question: 'Which Nigerian bank launched the “Green Loan Initiative” in 2025?', options: ['GTBank','Zenith Bank','Access Bank','UBA'], answer: 2, explanation: 'Access Bank launched the Green Loan Initiative to support environmentally sustainable projects in 2025.' },
+  { question: 'Nigeria’s inflation rate in August 2025 was reported at approximately?', options: ['18%','21%','25%','28%'], answer: 1, explanation: 'Nigeria’s inflation rate was around 21% as reported in August 2025.' },
+  { question: 'Which Nigerian state became the first to adopt a 24-hour electricity project in 2025?', options: ['Lagos','Oyo','Kano','Rivers'], answer: 0, explanation: 'Lagos State launched a 24-hour electricity project to provide uninterrupted power supply in 2025.' },
+  { question: 'Which Nigerian tech hub received international funding in 2025?', options: ['Yaba, Lagos','Port Harcourt Tech Park','Abuja Tech Village','Kano Innovation Center'], answer: 0, explanation: 'Yaba, Lagos, known as “Yabacon Valley,” received international funding in 2025 to support startups.' },
+  { question: 'In 2025, Nigeria launched a satellite with which global partner?', options: ['USA','China','Russia','India'], answer: 1, explanation: 'Nigeria launched a communications satellite in partnership with China in 2025.' },
+  { question: 'Which Nigerian footballer won the 2025 African Player of the Year award?', options: ['Victor Osimhen','Ahmed Musa','Samuel Chukwueze','Wilfred Ndidi'], answer: 0, explanation: 'Victor Osimhen won the African Player of the Year award in 2025.' },
+  { question: 'Nigeria joined the African Continental Free Trade Area (AfCFTA) to benefit from?', options: ['Trade liberalization','Military alliance','Education exchange','Healthcare funding'], answer: 0, explanation: 'Nigeria participates in AfCFTA to benefit from trade liberalization and regional integration.' },
+  { question: 'Which Nigerian actor won an international award in 2025?', options: ['Genevieve Nnaji','John Boyega','Chiwetel Ejiofor','Rita Dominic'], answer: 3, explanation: 'Rita Dominic won an international acting award in 2025.' },
+  { question: 'Nigeria hosted which major international sporting event in 2025?', options: ['African Cup of Nations','FIFA U-20 World Cup','Commonwealth Games','Olympics'], answer: 1, explanation: 'Nigeria hosted the FIFA U-20 World Cup in 2025.' },
+  { question: 'Which Nigerian minister introduced the “Digital Economy Act” in 2025?', options: ['Niyi Adebayo','Isa Ali Pantami','Bola Tinubu','Godwin Emefiele'], answer: 1, explanation: 'Isa Ali Pantami, Minister of Communications, introduced the Digital Economy Act in 2025.' },
+  { question: 'In 2025, which Nigerian university became top-ranked in West Africa for research output?', options: ['University of Ibadan','Covenant University','Obafemi Awolowo University','Ahmadu Bello University'], answer: 0, explanation: 'University of Ibadan led West African universities in research output in 2025.' },
+  { question: 'Nigeria’s major foreign exchange earner in 2025 remains?', options: ['Agriculture','Oil & Gas','Tourism','Telecoms'], answer: 1, explanation: 'Oil & Gas remains Nigeria’s largest foreign exchange earner in 2025.' },
+  { question: 'Which Nigerian film won “Best Film” at the 2025 Africa Movie Academy Awards?', options: ['The Milkmaid','Citation','Amina','Living in Bondage'], answer: 2, explanation: 'The film “Amina” won Best Film at the 2025 AMAA Awards.' },
+  { question: 'Nigeria officially inaugurated which dam project in 2025 to boost hydroelectric power?', options: ['Kainji Dam','Zungeru Dam','Jebba Dam','Shiroro Dam'], answer: 1, explanation: 'The Zungeru Dam project was inaugurated in 2025 to boost hydroelectric power generation.' },
+  { question: 'Which Nigerian city became the first smart city pilot in 2025?', options: ['Lagos','Abuja','Port Harcourt','Kano'], answer: 1, explanation: 'Abuja was selected as Nigeria’s first smart city pilot in 2025.' },
+  { question: 'Nigeria launched which financial technology initiative in 2025?', options: ['Cashless Nigeria','Digital Naira Pilot','Bank Verification Number','Mobile Money Expansion'], answer: 1, explanation: 'The Digital Naira pilot was launched in 2025 as part of fintech innovations.' },
+  { question: 'In 2025, which Nigerian state became the first to implement free basic healthcare?', options: ['Lagos','Kano','Rivers','Enugu'], answer: 3, explanation: 'Enugu State launched free basic healthcare in 2025.' },
+  { question: 'Which Nigerian artist topped international music charts in 2025?', options: ['Burna Boy','Wizkid','Tems','Olamide'], answer: 1, explanation: 'Wizkid topped international music charts in 2025 with global hits.' },
+  { question: 'Nigeria joined which climate initiative in 2025 to reduce carbon emissions?', options: ['Paris Agreement','Glasgow Pact','COP28 Initiative','African Climate Alliance'], answer: 2, explanation: 'Nigeria joined the COP28 Initiative in 2025 to reduce carbon emissions.' },
+  { question: 'Which Nigerian state recorded the highest agricultural output in 2025?', options: ['Kano','Benue','Oyo','Kaduna'], answer: 1, explanation: 'Benue State is known as Nigeria’s food basket and recorded the highest output in 2025.' }, 
+  { question: 'Nigeria has been admitted as a “partner country” of which major international bloc in 2025?', options: ['G7','BRICS','ASEAN','EU'], answer: 1, explanation: 'In 2025 Nigeria was accepted as a partner country of the BRICS bloc. 0' },
+  { question: 'In 2024 Nigeria posted a balance of payments surplus of around how many billion dollars?', options: ['$2.5 billion','$6.83 billion','$10.2 billion','$15.5 billion'], answer: 1, explanation: 'Nigeria recorded a $6.83 billion payments surplus in 2024. 1' },
+  { question: 'Which Nigerian state had a state of emergency declared in 2025 due to pipeline vandalism?', options: ['Delta State','Bayelsa State','Rivers State','Akwa Ibom State'], answer: 2, explanation: 'President Tinubu declared a state of emergency in Rivers State in 2025 over pipeline vandalism. 2' },
+  { question: 'What major public health emergency did Nigeria receive over one million vaccines to address in 2025?', options: ['Ebola outbreak','Meningitis outbreak','Malaria surge','Cholera epidemic'], answer: 1, explanation: 'Nigeria received over 1 million vaccines to combat a meningitis outbreak across many states. 3' },
+  { question: 'In September 2025 the Central Bank of Nigeria (CBN) cut its benchmark interest rate for the first time in five years to approximately what rate?', options: ['23%','25%','27%','29%'], answer: 2, explanation: 'The CBN cut its rate to around 27% in September 2025. 5' },
+  { question: 'Which sector hosted the inaugural “Techno‑Expo” in Enugu in 2025 to support innovation and technology as part of the “Renewed Hope Agenda”?', options: ['Agriculture','Manufacturing','Innovation/Science & Technology','Mining'], answer: 2, explanation: 'The Innovation, Science and Technology sector launched a Techno‑Expo in Enugu as part of the federal government’s agenda. 6' },
+  { question: 'Which former INEC chairman was appointed Special Adviser and Coordinator of the Presidential Livestock Reform in Nigeria in 2025?', options: ['Attahiru Jega','Maurice Iwu','Professor Uche Nnaji','Ibrahim Geidam'], answer: 0, explanation: 'Former INEC chairman Prof. Attahiru Jega was appointed to coordinate livestock reform in March 2025. 7' },
+  { question: 'In March 2025, the Northern Elders Forum (NEF) publicly condemned what tragic event involving northern hunters?', options: ['Mining accident','Cattle rustling massacre','Killing of northern hunters in Edo State','Flooding disaster'], answer: 2, explanation: 'NEF condemned the killing of northern hunters in Edo State and said tolerance would no longer be extended. 9' },
+  { question: 'Which legislative act did Nigeria’s President assent to in early 2025 that strengthened the legal framework of the capital market?', options: ['Banks & Other Financial Institutions Act 2025','Investments and Securities Act 2025','Insurance Act 2025','Companies & Allied Matters Act 2025'], answer: 1, explanation: 'In 2025 the Investments and Securities Act 2025 was assented to, repealing the older 2007 act. 10' },
+  { question: 'A fire broke out on a crude storage barge at Cawthorne Channel 1 in Rivers State in February 2025. How many casualties were reported?', options: ['None','5','10','15'], answer: 0, explanation: 'The NNPC reported that although a fire occurred on the barge, “no life lost” was recorded. 11' },
+  { question: 'Which Nigerian state experienced a major flood in May 2025 that resulted from heavy rainfall and dam collapse, killing hundreds?', options: ['Kwara State','Niger State','Benue State','Kaduna State'], answer: 1, explanation: 'The Mokwa flood in Niger State in May 2025 killed hundreds of people after heavy rainfall and a dam collapse. 12' },
+  { question: 'Which area of public policy did the federal government identify as one of its five critical areas in the “Renewed Hope Agenda” for lifting Nigerians out of poverty?', options: ['Tourism','Renewable energy & digital innovation','Mining','Transport'], answer: 1, explanation: 'As part of the National Development Plan the government focused on climate‑smart agriculture, renewable energy and digital innovation. 13' },
+  { question: 'Which major report recorded over 1,180 suspected cases of Lassa Fever across 30 states in February 2025?', options: ['WHO Monthly Bulletin','WA NER Annual Review','WANEP News Monthly Bulletin','NCDC Weekly Report'], answer: 2, explanation: 'The WANEP News Monthly Bulletin reported 1,180 suspected cases of Lassa Fever in February 2025. 14' },
+  { question: 'Which Nigerian newspaper reported the defection of former Kaduna governor Nasir El‑Rufai from APC to SDP in March 2025?', options: ['Premium Times','Daily Post','The Guardian','Vanguard'], answer: 0, explanation: 'Premium Times carried the report on March 11 2025 about El‑Rufai’s defection. 15' },
+  { question: 'In early 2025, the federal government appointed a new Accountant‑General of the Federation. Who was appointed?', options: ['Shamsedeen Babatunde Ogunjimi','Oluwatoyin Madehin','Muhammad Nami','Henry Nwawuba'], answer: 0, explanation: 'Shamsedeen Babatunde Ogunjimi was appointed as Nigeria’s Accountant‑General in March 2025. 16' },
+  { question: 'Which city is Nigeria’s largest by population?', options: ['Abuja','Lagos','Kano','Port Harcourt'], answer: 1, explanation: 'Lagos is Nigeria’s largest and most populous city. (General knowledge supplementing current affairs context)' },
+  { question: 'In 2025, civil society groups called for a state of emergency in Nigeria over what issue?', options: ['Climate change','Gender‑based violence','Food insecurity','Road accidents'], answer: 1, explanation: 'Activists asked for a state of emergency due to a sharp rise in gender‑based violence across the country in 2025. 17' },
+  { question: 'Which Nigerian agency is primarily responsible for disease control and reported the meningitis outbreak vaccine reception?', options: ['NCDC','NHIS','NAFDAC','NESREA'], answer: 0, explanation: 'The Nigeria Centre for Disease Control (NCDC) reported the outbreak and vaccine receipt. 18' },
+  { question: 'Which Nigerian economic measure in 2024 contributed to the $6.83 billion surplus by reducing non‑oil imports by around what percent?', options: ['~5%','~12%','~20%','~30%'], answer: 1, explanation: 'Non‑oil imports fell by about 12.6% in the period that contributed to the surplus. 19' },
+  { question: 'Which disaster‑type event in Nigeria in 2025 displaced thousands of farmers, destroyed paddy fields and bridges and was linked to releasing water from a hydroelectric dam?', options: ['Oil spill','Mining collapse','Flood in Mokwa, Niger State','Desertification'], answer: 2, explanation: 'The 2025 Mokwa flood in Niger State was caused by heavy rainfall, dam‐water release and destroyed over 10,000 ha of paddy farms. 20' },
+  { question: 'Who is the current President of Nigeria (2025)?', options: ['Goodluck Jonathan','Bola Ahmed Tinubu','Yemi Osinbajo','Atiku Abubakar'], answer: 1, explanation: 'Bola Ahmed Tinubu is the current President of Nigeria (since May 29, 2023).' },
+  { question: 'Who is the current Vice President of Nigeria (2025)?', options: ['Yemi Osinbajo','Kashim Shettima','Rotimi Amaechi','Peter Obi'], answer: 1, explanation: 'Kashim Shettima is Nigeria’s Vice President under Tinubu administration.' },
+  { question: 'The capital city of Nigeria is?', options: ['Lagos','Abuja','Kano','Port Harcourt'], answer: 1, explanation: 'Abuja became the capital of Nigeria in 1991.' },
+  { question: 'When did Nigeria gain independence?', options: ['1960','1963','1957','1970'], answer: 0, explanation: 'Nigeria gained independence from Britain on 1st October 1960.' },
+  { question: 'Who was Nigeria’s first President?', options: ['Nnamdi Azikiwe','Tafawa Balewa','Olusegun Obasanjo','Ahmadu Bello'], answer: 0, explanation: 'Dr. Nnamdi Azikiwe became the first President in 1963.' },
+  { question: 'Nigeria became a Republic in which year?', options: ['1960','1963','1979','1999'], answer: 1, explanation: 'Nigeria became a Republic on 1st October 1963.' },
+  { question: 'Who is the current Senate President (2025)?', options: ['Ahmad Lawan','Godswill Akpabio','Bukola Saraki','Adams Oshiomhole'], answer: 1, explanation: 'Godswill Akpabio is the Senate President as of 2025.' },
+  { question: 'Who is the current Speaker of the House of Representatives (2025)?', options: ['Femi Gbajabiamila','Tajudeen Abbas','Yakubu Dogara','Aminu Tambuwal'], answer: 1, explanation: 'Tajudeen Abbas became Speaker of the House in 2023.' },
+  { question: 'Nigeria’s national currency is?', options: ['Dollar','Naira','Cedi','Pound'], answer: 1, explanation: 'Nigeria’s currency is the Naira (₦).' },
+  { question: 'Who designed the Nigerian flag?', options: ['Taiwo Akinkunmi','Obafemi Awolowo','Flora Shaw','Ahmadu Bello'], answer: 0, explanation: 'Taiwo Akinkunmi designed the national flag in 1959.' },
+  { question: 'The green color on the Nigerian flag represents?', options: ['Peace','Agriculture','Unity','Oil wealth'], answer: 1, explanation: 'Green represents agriculture; white stands for peace.' },
+  { question: 'What is the official name of Nigeria?', options: ['Federal Republic of Nigeria','People’s Republic of Nigeria','United States of Nigeria','Democratic Republic of Nigeria'], answer: 0, explanation: 'Officially called the Federal Republic of Nigeria.' },
+  { question: 'Nigeria is located in which continent?', options: ['Africa','Europe','Asia','South America'], answer: 0, explanation: 'Nigeria is located in West Africa.' },
+  { question: 'How many geopolitical zones does Nigeria have?', options: ['4','5','6','7'], answer: 2, explanation: 'Nigeria has six geopolitical zones.' },
+  { question: 'How many states are there in Nigeria?', options: ['30','32','36','38'], answer: 2, explanation: 'Nigeria has 36 states and the Federal Capital Territory.' },
+  { question: 'Who is the current Inspector General of Police (2025)?', options: ['Usman Alkali Baba','Kayode Egbetokun','Mohammed Adamu','Ibrahim Idris'], answer: 1, explanation: 'Kayode Egbetokun is the current IGP of Nigeria.' },
+  { question: 'What is the motto of Nigeria?', options: ['Unity and Peace','Unity and Faith, Peace and Progress','Faith and Honour','Peace and Development'], answer: 1, explanation: 'Nigeria’s motto is “Unity and Faith, Peace and Progress.”' },
+  { question: 'When was the Nigerian Civil War fought?', options: ['1967–1970','1960–1963','1975–1979','1980–1983'], answer: 0, explanation: 'The Nigerian Civil War lasted from 1967 to 1970.' },
+  { question: 'The Nigerian National Anthem was adopted in?', options: ['1960','1978','1999','2000'], answer: 1, explanation: 'The current anthem was adopted in 1978.' },
+  { question: 'Who composed the current Nigerian National Anthem?', options: ['Benedict E. Odiase','Pa Benedict Odiase','Michael Okpara','Taiwo Akinkunmi'], answer: 1, explanation: 'Composed by Benedict E. Odiase and written by a group of Nigerians.' },
+  { question: 'Who is the current Chief Justice of Nigeria (2025)?', options: ['Tanko Muhammad','Olukayode Ariwoola','Walter Onnoghen','Mary Odili'], answer: 1, explanation: 'Justice Olukayode Ariwoola is the Chief Justice of Nigeria.' },
+  { question: 'Nigeria practices what system of government?', options: ['Unitary','Confederal','Federal','Monarchy'], answer: 2, explanation: 'Nigeria practices federalism with three tiers of government.' },
+  { question: 'Nigeria’s national football team is called?', options: ['Green Eagles','Super Eagles','Flying Antelopes','Golden Eagles'], answer: 1, explanation: 'The national team is known as the Super Eagles.' },
+  { question: 'Which is the largest city in Nigeria?', options: ['Abuja','Lagos','Kano','Ibadan'], answer: 1, explanation: 'Lagos is the largest and most populous city in Nigeria.' },
+  { question: 'When was the current Constitution of Nigeria enacted?', options: ['1993','1995','1999','2003'], answer: 2, explanation: 'Nigeria’s current constitution came into effect on May 29, 1999.' },
+  { question: 'The Nigerian coat of arms has two animals, which are?', options: ['Lions','Horses','Elephants','Leopards'], answer: 1, explanation: 'The black shield is supported by two white horses.' },
+  { question: 'The black shield in the coat of arms stands for?', options: ['Wealth','Fertile soil','Unity','Strength'], answer: 1, explanation: 'Black shield represents Nigeria’s fertile soil.' },
+  { question: 'The eagle on the coat of arms symbolizes?', options: ['Freedom','Strength','Unity','Peace'], answer: 1, explanation: 'Eagle stands for strength and pride.' },
+  { question: 'What is the largest ethnic group in Nigeria?', options: ['Hausa','Igbo','Yoruba','Fulani'], answer: 0, explanation: 'Hausa-Fulani is the largest ethnic group.' },
+  { question: 'What is the major source of revenue in Nigeria?', options: ['Agriculture','Oil and Gas','Tourism','Mining'], answer: 1, explanation: 'Nigeria’s main revenue comes from petroleum exports.' },
+  { question: 'Nigeria’s first capital city was?', options: ['Lagos','Ibadan','Calabar','Abuja'], answer: 0, explanation: 'Lagos was Nigeria’s first capital before Abuja.' },
+  { question: 'Which Nigerian state is known as the "Center of Excellence"?', options: ['Kano','Lagos','Kaduna','Abuja'], answer: 1, explanation: 'Lagos State’s slogan is "Center of Excellence".' },
+  { question: 'Which Nigerian state is known as the "Food Basket of the Nation"?', options: ['Kano','Benue','Kaduna','Kogi'], answer: 1, explanation: 'Benue State is known as the Food Basket of the Nation.' },
+  { question: 'Who was Nigeria’s first military Head of State?', options: ['Yakubu Gowon','Aguiyi Ironsi','Olusegun Obasanjo','Murtala Mohammed'], answer: 1, explanation: 'General Aguiyi Ironsi became Head of State in 1966.' },
+  { question: 'Who led the 1966 counter-coup in Nigeria?', options: ['Yakubu Gowon','Murtala Mohammed','Aguiyi Ironsi','Sani Abacha'], answer: 0, explanation: 'Lt. Col. Yakubu Gowon led the 1966 counter-coup.' },
+  { question: 'Nigeria’s first executive President was?', options: ['Shehu Shagari','Olusegun Obasanjo','Nnamdi Azikiwe','Tafawa Balewa'], answer: 0, explanation: 'Alhaji Shehu Shagari became first executive President in 1979.' },
+  { question: 'Who was the first female Minister of Finance in Nigeria?', options: ['Ngozi Okonjo-Iweala','Kemi Adeosun','Stella Oduah','Patricia Etteh'], answer: 0, explanation: 'Dr. Ngozi Okonjo-Iweala was Nigeria’s first female Finance Minister.' },
+  { question: 'Nigeria’s population is estimated to be over?', options: ['100 million','150 million','200 million','250 million'], answer: 2, explanation: 'As of 2025, Nigeria’s population exceeds 200 million.' },
+  { question: 'Which agency manages Nigeria’s elections?', options: ['INEC','NDLEA','EFCC','FRSC'], answer: 0, explanation: 'Independent National Electoral Commission (INEC) conducts elections.' },
+  { question: 'What does EFCC stand for?', options: ['Economic and Financial Crimes Commission','Economic Freedom Control Centre','Economic and Fraud Control Commission','Emergency Financial Crimes Committee'], answer: 0, explanation: 'EFCC = Economic and Financial Crimes Commission.' },
+  { question: 'What is the function of the NDLEA?', options: ['Drug control','Road safety','Tax collection','Security training'], answer: 0, explanation: 'NDLEA handles drug law enforcement in Nigeria.' },
+  { question: 'When did Nigeria return to democratic rule?', options: ['1993','1998','1999','2000'], answer: 2, explanation: 'Democracy was restored on May 29, 1999.' },
+  { question: 'Who was Nigeria’s Head of State from 1976 to 1979?', options: ['Olusegun Obasanjo','Yakubu Gowon','Murtala Mohammed','Sani Abacha'], answer: 0, explanation: 'General Olusegun Obasanjo ruled from 1976 to 1979.' },
+  { question: 'Who was the first civilian Governor of Lagos State?', options: ['Lateef Jakande','Bola Tinubu','Ambode Akinwunmi','Babatunde Fashola'], answer: 0, explanation: 'Alhaji Lateef Jakande was Lagos’ first civilian Governor (1979–1983).' },
+  { question: 'Nigeria is a member of which international organization?', options: ['ECOWAS','NATO','OPEC','Both A and C'], answer: 3, explanation: 'Nigeria belongs to ECOWAS and OPEC.' },
+  { question: 'Which Nigerian airport is named after Murtala Mohammed?', options: ['Lagos International Airport','Abuja Airport','Kano Airport','Port Harcourt Airport'], answer: 0, explanation: 'Lagos International Airport is named Murtala Mohammed International Airport.' },
+  { question: 'Who is the current Minister of Interior (2025)?', options: ['Rauf Aregbesola','Olubunmi Tunji-Ojo','Abubakar Malami','Kayode Fayemi'], answer: 1, explanation: 'Olubunmi Tunji-Ojo serves as Minister of Interior under Tinubu’s government.' },
+  { question: 'What is Nigeria’s national pledge about?', options: ['Patriotism','Unity and loyalty','Faith and religion','Economy'], answer: 1, explanation: 'The national pledge is a declaration of loyalty and unity to Nigeria.' },
+  { question: 'Which river is the longest in Nigeria?', options: ['River Niger','River Benue','River Kaduna','River Cross'], answer: 0, explanation: 'River Niger is the longest river in Nigeria.' },
+  { question: 'What is the chemical symbol for Sodium?', options: ['S','Na','N','So'], answer: 1, explanation: 'Na is the symbol for Sodium.' },
+  { question: 'Which acid is found in vinegar?', options: ['Sulfuric acid','Acetic acid','Hydrochloric acid','Nitric acid'], answer: 1, explanation: 'Acetic acid is present in vinegar.' },
+  { question: 'Water is a compound made of?', options: ['Hydrogen and Oxygen','Hydrogen and Carbon','Oxygen and Nitrogen','Carbon and Hydrogen'], answer: 0, explanation: 'Water = H2O, Hydrogen + Oxygen.' },
+  { question: 'pH value of a neutral solution is?', options: ['7','0','14','1'], answer: 0, explanation: 'Neutral solution has pH = 7.' },
+  { question: 'Which gas is released during photosynthesis?', options: ['Oxygen','Carbon dioxide','Nitrogen','Hydrogen'], answer: 0, explanation: 'Plants release Oxygen during photosynthesis.' },
+  { question: 'Which is a noble gas?', options: ['Oxygen','Neon','Hydrogen','Chlorine'], answer: 1, explanation: 'Neon is a noble gas.' },
+  { question: 'The molecular formula of glucose is?', options: ['C6H12O6','C2H5OH','CH4','H2O'], answer: 0, explanation: 'Glucose formula = C6H12O6.' },
+  { question: 'Speed of light in vacuum is approximately?', options: ['3 x 10^8 m/s','3 x 10^6 m/s','3 x 10^5 m/s','3 x 10^7 m/s'], answer: 0, explanation: 'Speed of light = 3 x 10^8 m/s.' },
+  { question: 'Force is measured in?', options: ['Newton','Joule','Pascal','Watt'], answer: 0, explanation: 'Force unit = Newton (N).' },
+  { question: 'The SI unit of energy is?', options: ['Joule','Newton','Watt','Volt'], answer: 0, explanation: 'Energy is measured in Joules (J).' },
+  { question: 'Acceleration due to gravity on Earth?', options: ['9.8 m/s²','10 m/s²','8 m/s²','9 m/s'], answer: 0, explanation: 'g = 9.8 m/s².' },
+  { question: 'Which lens is used to correct myopia?', options: ['Convex lens','Concave lens','Plane lens','None'], answer: 1, explanation: 'Concave lens diverges light to correct nearsightedness.' },
+  { question: 'Unit of electric current?', options: ['Ampere','Volt','Ohm','Watt'], answer: 0, explanation: 'Electric current unit = Ampere (A).' },
+  { question: 'Which phenomenon causes rainbow?', options: ['Refraction and dispersion','Reflection only','Diffraction','Absorption'], answer: 0, explanation: 'Rainbow occurs due to refraction and dispersion of sunlight in water droplets.' },
+  { question: 'The powerhouse of the cell is?', options: ['Nucleus','Mitochondria','Ribosome','Chloroplast'], answer: 1, explanation: 'Mitochondria produce energy for the cell.' },
+  { question: 'Which blood cells fight infection?', options: ['Red blood cells','White blood cells','Platelets','Plasma'], answer: 1, explanation: 'White blood cells fight infections.' },
+  { question: 'Photosynthesis occurs in?', options: ['Mitochondria','Chloroplast','Nucleus','Ribosome'], answer: 1, explanation: 'Chloroplast contains chlorophyll for photosynthesis.' },
+  { question: 'Human skeleton has how many bones?', options: ['206','201','210','196'], answer: 0, explanation: 'Adult human skeleton has 206 bones.' },
+  { question: 'Which organ produces insulin?', options: ['Liver','Pancreas','Kidney','Heart'], answer: 1, explanation: 'Pancreas produces insulin.' },
+  { question: 'DNA stands for?', options: ['Deoxyribonucleic Acid','Dicarboxy Nucleic Acid','Deoxynitro Acid','Diatomic Nucleic Acid'], answer: 0, explanation: 'DNA = Deoxyribonucleic Acid.' },
+  { question: 'Which part of the plant transports water?', options: ['Xylem','Phloem','Cambium','Epidermis'], answer: 0, explanation: 'Xylem transports water from roots to leaves.' },
+  { question: 'Nigeria operates which system of government?', options: ['Federal','Unitary','Confederation','Monarchy'], answer: 0, explanation: 'Nigeria has a federal system of government.' },
+  { question: 'Who is the Commander-in-Chief of the Armed Forces in Nigeria?', options: ['President','Vice President','Chief of Defence Staff','Minister of Defence'], answer: 0, explanation: 'President is the Commander-in-Chief.' },
+  { question: 'Which is a fundamental duty of a citizen?', options: ['Voting','Driving','Reading','Cooking'], answer: 0, explanation: 'Voting is a fundamental duty of citizens.' },
+  { question: 'National Assembly of Nigeria is?', options: ['Bicameral','Unicameral','Tricameral','Quadricameral'], answer: 0, explanation: 'It has Senate and House of Representatives (bicameral).'},
+  { question: 'Nigeria’s supreme law is?', options: ['The Constitution','Civil Code','Penal Code','Customary Law'], answer: 0, explanation: 'The Constitution is the highest law in Nigeria.' },
+  { question: 'Accounting equation is?', options: ['Assets = Liabilities + Capital','Assets + Liabilities = Capital','Revenue - Expenses = Profit','Assets = Revenue + Expenses'], answer: 0, explanation: 'Accounting equation: Assets = Liabilities + Capital.' },
+  { question: 'Which is a source of business capital?', options: ['Loan','Skill','Experience','Idea'], answer: 0, explanation: 'Loan provides business capital.' },
+  { question: 'Profit = ?', options: ['Revenue - Cost','Revenue + Cost','Revenue × Cost','Cost - Revenue'], answer: 0, explanation: 'Profit = Revenue – Cost.' },
+  { question: 'Which is a type of business organization?', options: ['Sole proprietorship','Government','School','Hospital'], answer: 0, explanation: 'Sole proprietorship is a business organization.' },
+  { question: 'Marketing involves?', options: ['Selling and promoting products','Buying food','Cooking','Teaching'], answer: 0, explanation: 'Marketing is about promoting and selling products.' },
+  { question: 'Which of these is a leguminous plant?', options: ['Soybean','Maize','Rice','Wheat'], answer: 0, explanation: 'Soybean is a legume.' },
+  { question: 'Which nutrient is supplied by NPK fertilizer?', options: ['Nitrogen, Phosphorus, Potassium','Nickel, Phosphorus, Kalium','Nitrogen, Protein, Kalium','None'], answer: 0, explanation: 'NPK = Nitrogen, Phosphorus, Potassium.' },
+  { question: 'Process of soil formation is called?', options: ['Weathering','Photosynthesis','Respiration','Fermentation'], answer: 0, explanation: 'Soil forms from weathering of rocks and organic matter.' },
+  { question: 'Which practice helps prevent soil erosion?', options: ['Afforestation','Overgrazing','Deforestation','Burning'], answer: 0, explanation: 'Planting trees (afforestation) prevents soil erosion.' },
+  { question: 'Ruminant animals include?', options: ['Cow','Pig','Chicken','Cat'], answer: 0, explanation: 'Cows are ruminants; pigs and chickens are not.' },
+  { question: 'Which is a cash crop?', options: ['Cocoa','Maize','Yam','Cassava'], answer: 0, explanation: 'Cocoa is a cash crop sold for income.' },
+  { question: 'Legumes fix nitrogen in the soil via?', options: ['Rhizobium bacteria','Fungi','Algae','Protozoa'], answer: 0, explanation: 'Legumes have symbiotic Rhizobium bacteria for nitrogen fixation.' },
+  { question: 'Which farming system mixes crops and animals?', options: ['Mixed farming','Monoculture','Crop rotation','Shifting cultivation'], answer: 0, explanation: 'Mixed farming integrates crops and livestock.' },
+  { question: 'Organic manure is?', options: ['Animal/plant waste','Chemical fertilizer','Pesticide','Herbicide'], answer: 0, explanation: 'Organic manure is decomposed animal or plant waste.' },
+  { question: 'Which factor affects seed germination?', options: ['Temperature','Color of soil','Shape of land','Altitude'], answer: 0, explanation: 'Temperature, moisture, and oxygen affect seed germination.' },
+  { question: 'Who is the current Minister of Interior of Nigeria?', options: ['Kayode Egbetokun','Olubunmi Tunji-Ojo','Lai Mohammed','Rauf Aregbesola'], answer: 1, explanation: 'As of 2025, Olubunmi Tunji-Ojo is the Minister of Interior. Kayode Egbetokun is the Inspector General of Police.' },
+  { question: 'The CDCFIB supervises all the following agencies except:', options: ['Nigeria Correctional Service','Nigeria Immigration Service','Nigeria Police Force','Federal Fire Service'], answer: 2, explanation: 'CDCFIB supervises Correctional, Immigration, and Federal Fire services. Police Force is under the Ministry of Police Affairs.' },
+  { question: 'When was the Civil Defence, Correctional, Fire and Immigration Services Board last renamed?', options: ['1986','1992','2003','2011'], answer: 3, explanation: 'The CDCFIB was last renamed in 2011 to include all its current responsibilities.' },
+  { question: 'What is the motto of the Nigeria Security and Civil Defence Corps (NSCDC)?', options: ['Peace and Security','Integrity and Discipline','Defending the Defenceless','Service and Honour'], answer: 2, explanation: 'The motto "Defending the Defenceless" reflects NSCDC’s role in protecting citizens and property.' },
+  { question: 'Who is the current President of Nigeria (2025)?', options: ['Muhammadu Buhari','Bola Ahmed Tinubu','Yemi Osinbajo','Atiku Abubakar'], answer: 1, explanation: 'Bola Ahmed Tinubu won the 2023 election and is president in 2025.' },
+  { question: 'Choose the word closest in meaning to "Diligent"', options: ['Lazy','Hard-working','Careless','Indifferent'], answer: 1, explanation: '"Diligent" means showing careful and persistent effort; "Hard-working" is closest in meaning.' },
+  { question: 'The officers ____ their duties with great commitment.', options: ['perform','performs','performing','performed'], answer: 0, explanation: 'The subject "officers" is plural, so the correct verb is "perform".' },
+  { question: 'Identify the correctly spelled word', options: ['Recomandation','Recomendation','Recommendation','Recomandition'], answer: 2, explanation: '"Recommendation" is the correct spelling.' },
+  { question: 'Choose the correct antonym of "Transparent"', options: ['Clear','Opaque','Honest','Pure'], answer: 1, explanation: 'The antonym of "Transparent" is "Opaque".' },
+  { question: 'Neither the staff nor the commandant ___ available.', options: ['are','were','is','be'], answer: 2, explanation: '"Neither…nor" takes a singular verb; therefore, "is" is correct.' },
+  { question: 'What is 15% of 400?', options: ['40','60','55','45'], answer: 1, explanation: '15% of 400 = 0.15 × 400 = 60.' },
+  { question: 'If a bag costs ₦12,000 and is sold at 10% loss, what is the selling price?', options: ['₦10,800','₦11,000','₦12,100','₦13,200'], answer: 0, explanation: '10% of 12,000 = 1,200. Selling price = 12,000 - 1,200 = 10,800.' },
+  { question: 'Find the next number: 2, 4, 8, 16, ?', options: ['20','24','30','32'], answer: 3, explanation: 'The sequence doubles each time: 2×2=4, 4×2=8, etc. Next = 32.' },
+  { question: 'Simplify: 2/5 + 3/5 = ?', options: ['1','1.5','2','1.25'], answer: 0, explanation: '(2+3)/5 = 5/5 = 1.' },
+  { question: 'A man walks 3 km east and 4 km north. Straight-line distance from start?', options: ['5 km','6 km','7 km','8 km'], answer: 0, explanation: 'Use Pythagoras theorem: √(3²+4²)=√25=5 km.' },
+  { question: 'All cats are animals. Some animals are not pets. Therefore?', options: ['All cats are pets','Some cats may not be pets','No cats are animals','All animals are cats'], answer: 1, explanation: 'Not all animals are pets, so some cats may not be pets.' },
+  { question: 'Find the odd one out: Courage, Fear, Bravery, Boldness', options: ['Courage','Fear','Bravery','Boldness'], answer: 1, explanation: '"Fear" is negative; others are positive traits.' },
+  { question: 'If B=2, C=3, then value of F?', options: ['4','5','6','7'], answer: 2, explanation: 'Letters correspond to positions in alphabet: F=6.' },
+  { question: 'Which number completes series: 1,3,9,27,?', options: ['36','54','81','72'], answer: 2, explanation: 'Sequence multiplies by 3: 27×3=81.' },
+  { question: 'If 5 workers finish a task in 12 days, how many days will 10 workers take?', options: ['6','10','12','24'], answer: 0, explanation: 'More workers reduce time proportionally: 12×(5/10)=6 days.' },
+  { question: 'The brain of the computer is the:', options: ['Monitor','CPU','Keyboard','Hard disk'], answer: 1, explanation: 'CPU processes instructions; it is called the brain of the computer.' },
+  { question: 'Key combination to copy in MS Word?', options: ['Ctrl+V','Ctrl+C','Ctrl+X','Ctrl+A'], answer: 1, explanation: 'Ctrl+C is the standard shortcut for copy.' },
+  { question: 'Which is an input device?', options: ['Speaker','Printer','Mouse','Monitor'], answer: 2, explanation: 'Mouse is an input device.' },
+  { question: 'WWW stands for?', options: ['World Web Wide','World Wide Web','Wide World Web','World Web Wave'], answer: 1, explanation: 'WWW = World Wide Web.' },
+  { question: 'Which storage device is non-volatile?', options: ['RAM','Cache','Hard Drive','Register'], answer: 2, explanation: 'Hard Drive retains data when power is off.' },
+  { question: 'Nigeria gained independence in which year?', options: ['1960','1963','1957','1970'], answer: 0, explanation: 'Nigeria gained independence on 1st Oct 1960.' },
+  { question: 'Federal Fire Service was transferred to CDCFIB in?', options: ['2010','2011','2012','2009'], answer: 1, explanation: 'Administrative transfer occurred in 2011.' },
+  { question: 'The main law establishing NSCDC was enacted in?', options: ['2001','2003','2005','2007'], answer: 1, explanation: 'The NSCDC Act came into effect in 2003.' },
+  { question: 'Nigeria Correctional Service was formerly called?', options: ['Prison Service','Civil Defence','Immigration Service','Fire Service'], answer: 0, explanation: 'It was formerly called Prison Service.' },
+  { question: 'The largest security agency in Nigeria is?', options: ['NSCDC','NIS','NCoS','Nigerian Police Force'], answer: 3, explanation: 'Nigerian Police Force has the highest personnel.' },
+  { question: 'Which is a basic human right?', options: ['Freedom of speech','Tax payment','Driving license','School uniform'], answer: 0, explanation: 'Freedom of speech is a fundamental human right.' },
+  { question: 'Basic first aid includes?', options: ['CPR','Cooking','Dancing','Singing'], answer: 0, explanation: 'CPR is a basic life-saving technique.' },
+  { question: 'Nigeria has how many geopolitical zones?', options: ['4','6','5','3'], answer: 1, explanation: 'Nigeria is divided into six geopolitical zones.' },
+  { question: 'Nigeria’s currency is?', options: ['Naira','Dollar','Pound','Cedi'], answer: 0, explanation: 'The official currency is Naira.' },
+  { question: 'Nigeria’s capital city is?', options: ['Lagos','Abuja','Kano','Port Harcourt'], answer: 1, explanation: 'Abuja is the federal capital.' },
+  { question: 'What is the square root of 144?', options: ['12','14','10','16'], answer: 0, explanation: '√144 = 12.' },
+  { question: 'If 7 + x = 15, x = ?', options: ['6','8','7','9'], answer: 1, explanation: 'x = 15 - 7 = 8.' },
+  { question: 'Convert 0.5 to a fraction?', options: ['1/2','1/4','1/3','2/3'], answer: 0, explanation: '0.5 = 1/2.' },
+  { question: 'Find the missing number: 5, 10, 15, ?', options: ['20','25','30','18'], answer: 0, explanation: 'Arithmetic sequence: +5 each time. Next = 20.' },
+  { question: 'Which is a renewable energy source?', options: ['Coal','Petrol','Solar','Gas'], answer: 2, explanation: 'Solar energy is renewable.' },
+  { question: 'Which organ filters blood in the human body?', options: ['Liver','Kidney','Heart','Lung'], answer: 1, explanation: 'Kidneys filter blood and remove waste.' },
+  { question: 'The Nigeria Police Force was established in?', options: ['1914','1930','1960','1975'], answer: 0, explanation: 'The police force was established in 1914.' },
+  { question: 'Which of these is a primary colour?', options: ['Red','Green','Purple','Orange'], answer: 0, explanation: 'Primary colors: Red, Blue, Yellow.' },
+  { question: 'Water boils at what temperature in Celsius?', options: ['90','80','100','120'], answer: 2, explanation: 'Boiling point of water = 100°C.' },
+  { question: 'Nigeria’s Independence Day is celebrated on?', options: ['1st Oct','29th May','12th June','1st Jan'], answer: 0, explanation: 'Nigeria celebrates independence on 1st October.' },
+  { question: 'Which of these is an ICT input device?', options: ['Monitor','Keyboard','Speaker','Printer'], answer: 1, explanation: 'Keyboard is used to input data into a computer.' },
+  { question: 'The headquarters of the NSCDC is in?', options: ['Lagos','Abuja','Kano','Port Harcourt'], answer: 1, explanation: 'Headquarters is located in Abuja.' },
+  { question: 'If a car travels 60 km in 1 hour, its speed in m/s is?', options: ['16.67','20','18','15'], answer: 0, explanation: 'Speed = 60 km/h × (1000/3600) ≈ 16.67 m/s.' },
+  { question: 'Nigeria has how many states?', options: ['36','32','30','40'], answer: 0, explanation: 'Nigeria has 36 states.' },
+  { question: 'The chemical formula of water is?', options: ['H2O','CO2','NaCl','O2'], answer: 0, explanation: 'Water consists of 2 Hydrogen atoms + 1 Oxygen atom.' },
+  { question: 'The first President of Nigeria was?', options: ['Nnamdi Azikiwe','Olusegun Obasanjo','Goodluck Jonathan','Muhammadu Buhari'], answer: 0, explanation: 'Nnamdi Azikiwe was the first president of Nigeria.' },
+  { question: 'The fastest land animal is?', options: ['Lion','Cheetah','Tiger','Leopard'], answer: 1, explanation: 'The cheetah is the fastest land animal.' },
+  { question: 'What is the freezing point of water?', options: ['0°C','32°C','100°C','-1°C'], answer: 0, explanation: 'Water freezes at 0°C.' },
+  { question: 'Which continent is Nigeria located in?', options: ['Asia','Africa','Europe','South America'], answer: 1, explanation: 'Nigeria is in Africa.' },
+  { question: 'Which vitamin is produced when the skin is exposed to sunlight?', options: ['Vitamin A','Vitamin B','Vitamin D','Vitamin C'], answer: 2, explanation: 'Exposure to sunlight helps the skin produce Vitamin D.' },
+  { question: 'The primary function of the heart is?', options: ['Filter blood','Pump blood','Digest food','Produce hormones'], answer: 1, explanation: 'The heart pumps blood throughout the body.' },
+  { question: 'Which planet is known as the Red Planet?', options: ['Earth','Venus','Mars','Jupiter'], answer: 2, explanation: 'Mars is called the Red Planet due to its color.' },
+  { question: 'A triangle has angles 60°, 60°, and 60°. It is?', options: ['Scalene','Isosceles','Equilateral','Right-angled'], answer: 2, explanation: 'All angles equal → Equilateral triangle.' },
+  { question: 'The main source of energy for Earth is?', options: ['Moon','Sun','Stars','Wind'], answer: 1, explanation: 'Sun provides most of the energy for Earth.' },
+  { question: 'The process of plants making food is called?', options: ['Respiration','Photosynthesis','Transpiration','Pollination'], answer: 1, explanation: 'Plants use photosynthesis to make food.' },
+  { question: 'Which of these is a type of cloud?', options: ['Cumulus','Lunar','Solar','Tectonic'], answer: 0, explanation: 'Cumulus is a type of cloud.' }
+];
+quizData = quizData.sort(() => Math.random() - 0.5);
+
+const quizContainer = document.getElementById('quiz');
+const resultContainer = document.getElementById('result');
+const submitBtn = document.getElementById('submit');
+const backToScoreBtn = document.getElementById('backToScore');
+const retryBtn = document.getElementById('retry');
+const prevBtn = document.getElementById('prev');
+const nextBtn = document.getElementById('next');
+const timerElement = document.getElementById('timer');
+
+let timeLeft = 60 * 60;
+let currentQuestion = 0;
+let currentAnswerPreview = 0;
+let inPreviewMode = false;
+let timerInterval;
+let quizStarted = false;
+
+// ✅ Start Screen
+function showStartScreen() {
+  quizContainer.innerHTML = `
+    <div id="introText" style="font-size:1.2rem;text-align:center;opacity:0;transition:opacity 1s ease;padding:40px;">
+      <p id="typewriter"></p>
+    </div>
+  `;
+  prevBtn.style.display = 'none';
+  nextBtn.style.display = 'none';
+  submitBtn.style.display = 'none';
+  retryBtn.style.display = 'none';
+  backToScoreBtn.style.display = 'none';
+  resultContainer.innerHTML = '';
+  timerElement.style.display = 'none';
+  const text = "Get ready for Mock CBT Exam...";
+  const el = document.getElementById('typewriter');
+  let i = 0;
+  const typing = setInterval(() => {
+    el.textContent += text[i];
+    i++;
+    if (i === text.length) {
+      clearInterval(typing);
+      showStartButton();
+    }
+  }, 80);
+  setTimeout(() => { document.getElementById('introText').style.opacity = '1'; }, 200);
+}
+
+// ✅ Show Start Exam Button
+function showStartButton() {
+  const btn = document.createElement('button');
+  btn.id = 'startExam';
+  btn.textContent = 'Start Exam';
+  btn.style.cssText = "padding:12px 25px;margin-top:20px;font-weight:bold;background:#1E90FF;color:#fff;border:none;border-radius:6px;cursor:pointer;opacity:0;transition:opacity 1s ease;";
+  quizContainer.appendChild(btn);
+  setTimeout(() => { btn.style.opacity = '1'; }, 500);
+  btn.addEventListener('click', startExam);
+}
+
+// ✅ Start Exam
+function startExam() {
+  quizStarted = true;
+  currentQuestion = 0;
+  timeLeft = 60 * 60;
+  resultContainer.innerHTML = '';
+  timerElement.style.display = 'block';
+  showQuestion(currentQuestion);
+  startTimer();
+}
+
+// ✅ Show Question
+function showQuestion(index) {
+  const q = quizData[index];
+  const answers = q.options.map((opt, i) =>
+    `<label style="display:block;text-align:left;margin:6px 0;">
+      <input type='radio' name='question${index}' value='${i}' ${q.userAnswer == i ? 'checked' : ''}> ${opt}
+    </label>`
+  ).join('');
+  quizContainer.innerHTML = `
+    <div class='question'>
+      <p><b>${index + 1}. ${q.question}</b></p>
+      <div class='answers'>${answers}</div>
+    </div>`;
+  prevBtn.style.display = index === 0 ? 'none' : 'inline-block';
+  nextBtn.style.display = index < quizData.length - 1 ? 'inline-block' : 'none';
+  submitBtn.style.display = index === quizData.length - 1 ? 'inline-block' : 'none';
+}
+
+function saveAnswer() {
+  const selected = document.querySelector(`input[name=question${currentQuestion}]:checked`);
+  quizData[currentQuestion].userAnswer = selected ? parseInt(selected.value) : null;
+}
+
+function nextQuestion() {
+  saveAnswer();
+  if (currentQuestion < quizData.length - 1) {
+    currentQuestion++;
+    showQuestion(currentQuestion);
+  }
+}
+
+function prevQuestion() {
+  saveAnswer();
+  if (currentQuestion > 0) {
+    currentQuestion--;
+    showQuestion(currentQuestion);
+  }
+}
+
+// ✅ Show Results
+function showResults() {
+  saveAnswer();
+  clearInterval(timerInterval);
+  timerElement.style.display = 'none';
+
+  let score = 0;
+  quizData.forEach(q => { if (q.userAnswer == q.answer) score++; });
+  const percent = (score / quizData.length) * 100;
+  const grade = percent >= 90 ? 'A' : percent >= 70 ? 'B' : percent >= 50 ? 'C' : 'F';
+  const gradeColor = grade === 'F' ? 'red' : 'inherit';
+
+  resultContainer.innerHTML = `
+    <div style="font-size:1.1rem;">
+      You scored <b>${score}</b> out of <b>${quizData.length}</b> (${percent.toFixed(0)}%)<br>
+      Grade: <b style="color:${gradeColor}">${grade}</b><br><br>
+      <button id='showAnswersBtn'>Preview Correct Answers & Explanation</button>
+    </div>
+  `;
+
+  quizContainer.innerHTML = '';
+  prevBtn.style.display = 'none';
+  nextBtn.style.display = 'none';
+  submitBtn.style.display = 'none';
+
+  // Retry only for F grade
+  retryBtn.style.display = grade === 'F' ? 'inline-block' : 'none';
+
+  document.getElementById('showAnswersBtn').addEventListener('click', () => {
+    inPreviewMode = true;
+    currentAnswerPreview = 0;
+    showAnswerPreview(currentAnswerPreview);
+    backToScoreBtn.style.display = 'inline-block';
+    retryBtn.style.display = 'none';
+    resultContainer.style.display = 'none';
+  });
+}
+
+// ✅ Show Answers + Explanations
+function showAnswerPreview(index) {
+  const q = quizData[index];
+  const userAns = q.userAnswer != null ? q.options[q.userAnswer] : 'No Answer';
+  quizContainer.innerHTML = `
+    <div class='question'>
+      <p><b>${index + 1}. ${q.question}</b></p>
+      <p>Your Answer: <span class='${q.userAnswer == q.answer ? 'correct' : 'incorrect'}'>${userAns}</span></p>
+      <p>Correct Answer: <span class='correct'>${q.options[q.answer]}</span></p>
+      <p class='explanation'><b>Explanation:</b> ${q.explanation || 'No explanation provided.'}</p>
+    </div>
+  `;
+  prevBtn.style.display = index === 0 ? 'none' : 'inline-block';
+  nextBtn.style.display = index === quizData.length - 1 ? 'none' : 'inline-block';
+  submitBtn.style.display = 'none';
+}
+
+// ✅ Navigation
+prevBtn.addEventListener('click', () => {
+  if (inPreviewMode) {
+    if (currentAnswerPreview > 0) currentAnswerPreview--;
+    showAnswerPreview(currentAnswerPreview);
+  } else prevQuestion();
+});
+
+nextBtn.addEventListener('click', () => {
+  if (inPreviewMode) {
+    if (currentAnswerPreview < quizData.length - 1) currentAnswerPreview++;
+    showAnswerPreview(currentAnswerPreview);
+  } else nextQuestion();
+});
+
+submitBtn.addEventListener('click', showResults);
+
+backToScoreBtn.addEventListener('click', () => {
+  inPreviewMode = false;
+  backToScoreBtn.style.display = 'none';
+  resultContainer.style.display = 'block';
+  quizContainer.innerHTML = '';
+  prevBtn.style.display = 'none';
+  nextBtn.style.display = 'none';
+});
+
+retryBtn.addEventListener('click', showStartScreen);
+
+// ✅ Timer
+function startTimer() {
+  clearInterval(timerInterval);
+  timerInterval = setInterval(() => {
+    let minutes = Math.floor(timeLeft / 60);
+    let seconds = timeLeft % 60;
+    timerElement.textContent = `Time Left: ${minutes}:${seconds < 10 ? '0' : ''}${seconds}`;
+    timeLeft--;
+    if (timeLeft < 0) {
+      clearInterval(timerInterval);
+      showResults();
+      alert('Time is up! Your answers have been submitted automatically.');
+    }
+  }, 1000);
+}
+
+// ✅ Initialize
+showStartScreen();
+</script>
+ <script>
+  function setTheme(mode) {
+  document.documentElement.setAttribute("data-theme", mode);
+  localStorage.setItem("theme", mode);
+  updateLogo();
+}
+
+function toggleTheme() {
+  const cur = document.documentElement.getAttribute("data-theme");
+  setTheme(cur === "dark" ? "light" : "dark");
+}
+
+function loadTheme() {
+  const saved = localStorage.getItem("theme") || (window.matchMedia("(prefers-color-scheme: dark)").matches ? "dark" : "light");
+  setTheme(saved);
+}
+
+function updateLogo() {
+  const logo = document.querySelector(".logo");
+  if (!logo) return;
+  const mode = document.documentElement.getAttribute("data-theme");
+  logo.style.opacity = "0";
+  setTimeout(() => {
+    logo.src = mode === "dark" ? "./logo1.png" : "./logo.png";
+    logo.style.opacity = "1";
+  }, 150);
+}
+
+window.addEventListener('load', loadTheme);
+  </script>
+  <div class="footer">
+  <p><b>Powered by Abdullahi Ibrahim Lailaba</b></p>
+  </div>
+</body>
+</html>
