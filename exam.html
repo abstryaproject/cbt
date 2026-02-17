@@ -1,0 +1,162 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>CBT</title>
+
+<link rel="stylesheet" href="style.css">
+
+<style>
+ /* Hide footer on mobile only when exam started */
+@media screen and (max-width: 768px) {
+  .footer.hide-on-mobile {
+    display: none;
+  }
+}
+/* =========================
+   WHATSAPP MODAL (F GRADE)
+========================= */
+.wa-modal {
+  position: fixed;
+  inset: 0;
+  background: rgba(0,0,0,0.75);
+  display: none;
+  justify-content: center;
+  align-items: center;
+  z-index: 9999;
+}
+
+.wa-box {
+  background: #1f1f1f;
+  color: #fff;
+  padding: 25px 30px;
+  border-radius: 12px;
+  width: 90%;
+  max-width: 420px;
+  text-align: center;
+  box-shadow: 0 15px 40px rgba(0,0,0,.6);
+}
+
+.wa-box h3 {
+  margin-top: 0;
+  color: #1E90FF;
+}
+
+#waNumber {
+  display: block;
+  margin: 10px 0;
+  font-size: 1.1rem;
+  letter-spacing: 1px;
+}
+
+.wa-actions {
+  margin-top: 20px;
+  display: flex;
+  justify-content: center;
+  gap: 10px;
+}
+
+.wa-actions button {
+  padding: 10px 18px;
+  border: none;
+  border-radius: 6px;
+  cursor: pointer;
+  font-weight: bold;
+}
+
+#tryBtn {
+  background: #1E90FF;
+  color: #fff;
+}
+
+#closeBtn {
+  background: #444;
+  color: #fff;
+}
+
+.wa-box small {
+  display: block;
+  margin-top: 12px;
+  opacity: 0.8;
+}
+</style>
+</head>
+
+<body>
+
+<button class="theme-toggle" onclick="toggleTheme()">🌓</button>
+<img src="./logo.png" alt="Abstrya Logo" class="logo" />
+
+<div class="container">
+
+  <div id="timer"></div>
+  <div id="quiz"></div>
+
+  <div id="navButtons">
+    <button id="prev">Previous</button>
+    <button id="next">Next</button>
+    <button id="submit" style="display:none;">Submit</button>
+    <button id="backToScore" style="display:none;">Back to Score</button>
+    <button id="retry" style="display:none;">Retry Exam</button>
+  </div>
+
+  <div id="result" class="result"></div>
+</div>
+
+<!-- =========================
+     WHATSAPP LIVE TUTORIAL MODAL
+     (SHOW ONLY WHEN GRADE = F)
+========================= -->
+<li id="waHelpItem" style="display:none;">
+  Need help? Contact us to start live tutorial class on 
+  <a href="#" id="whatsappLink" style="color:#1E90FF;text-decoration:none;"><span style="color:;"><u>WhatsApp link</u></span></a>
+</li>
+
+<div id="waModal" class="wa-modal" style="display:none;">
+  <div class="wa-box">
+    <h3>Connect Online</h3>
+    <p>Developer WhatsApp number:</p>
+    <b id="waNumber"><a href="tel:+2348138605126" style="color:white">+234 813 860 5126</a></b>
+
+    <div class="wa-actions">
+      <button id="tryBtn">Try it</button>
+      <button id="closeBtn">Close</button>
+    </div>
+
+    <small>📋 Number copied automatically</small>
+  </div>
+</div>
+
+<script src="questions.js"></script>
+<script src="engine.js"></script>
+<script src="theme.js"></script>
+  
+<div class="footer" id="footer">  
+  <p><b>Powered by Abdullahi Ibrahim Lailaba</b></p>  
+</div>
+  <script>
+  // Get the footer element
+  const footer = document.getElementById('footer');
+
+  // Function to hide footer on mobile when exam starts
+  function hideFooterOnMobile() {
+    if (window.innerWidth <= 768) { // mobile check
+      footer.classList.add('hide-on-mobile');
+    }
+  }
+
+  // Function to show footer again (optional, e.g., exam ends)
+  function showFooter() {
+    footer.classList.remove('hide-on-mobile');
+  }
+
+  // Example: integrate with your exam start
+  // If your engine.js has a function like startExam(), you can call hideFooterOnMobile() there.
+  // For demo, let's simulate exam start after 2 seconds:
+  setTimeout(() => {
+    hideFooterOnMobile();
+  }, 3600);
+</script>
+</body>
+</html>

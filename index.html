@@ -3,103 +3,320 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<meta http-equiv="refresh" content="5; url=cbt.html">
 <title>Preloader</title>
 <style>
-  * { margin: 0; padding: 0; box-sizing: border-box; }
+:root {
+  --bg: #ffffff;
+  --accent: #2563eb; 
+  --logo-filter: invert(0);
+}
 
-  /* --- Fullscreen overlay --- */
-  #preloader {
-    position: fixed;
-    inset: 0;
-    width: 100%;
-    height: 100%;
-    background: radial-gradient(circle at center, #fff 20%, #fff 100%);
-    display: flex;
-    flex-direction: column;
-    justify-content: center;
-    align-items: center;
-    z-index: 9999;
-    transition: opacity 0.8s ease, visibility 0.8s ease;
-  }
+[data-theme="dark"] {
+  --bg: #0f1115;
+  --accent: #22c55e;
+  --logo-filter: invert(1);
+}
 
-  #preloader.hide {
-    opacity: 0;
-    visibility: hidden;
-  }
+* { margin:0; padding:0; box-sizing:border-box; }
 
-  /* --- Logo animation --- */
-  .logo-loader {
-    width: 120px;
-    animation: pulse 1.6s infinite ease-in-out;
-  }
+/* =========================
+   PRELOADER
+========================= */
+#preloader {
+  position: fixed;
+  inset: 0;
+  background: var(--bg);
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  z-index: 9999;
+  transition: opacity 0.8s ease, visibility 0.8s ease, background 0.6s ease;
+}
 
-  @keyframes pulse {
-    0%, 100% { transform: scale(1); opacity: 1; }
-    50% { transform: scale(1.15); opacity: 0.6; }
-  }
+#preloader.hide {
+  opacity: 0;
+  visibility: hidden;
+}
 
-  /* --- Loading text --- */
-  .loading-text {
-    color: #fff;
-    font-family: "Poppins", sans-serif;
-    letter-spacing: 2px;
-    margin-top: 1rem;
-    font-size: 1rem;
-    text-transform: uppercase;
-    opacity: 0.8;
-  }
+.logo-loader {
+  width: 120px;
+  animation: pulse 1.6s infinite ease-in-out;
+  filter: var(--logo-filter) drop-shadow(0 0 18px var(--accent));
+  transition: filter 0.6s ease;
+}
 
-  /* --- Page content hidden initially --- */
-  body.loaded main {
-    visibility: visible;
-    opacity: 1;
-    transition: opacity 0.8s ease;
-  }
+@keyframes pulse {
+  0%,100% { transform: scale(1); opacity:1; }
+  50% { transform: scale(1.15); opacity:0.65; }
+}
 
-  main {
-    visibility: hidden;
-    opacity: 0;
-    padding: 3rem;
-    text-align: center;
-    font-family: "Segoe UI", sans-serif;
-    color: #222;
-  }
+/* =========================
+   MODAL
+========================= */
+.modal-bg {
+  position: fixed;
+  inset:0;
+  background: rgba(0,0,0,0.75);
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  z-index: 10000;
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 0.4s ease;
+}
+
+.modal-bg.active {
+  opacity: 1;
+  pointer-events: auto;
+}
+
+.modal {
+  background: white;
+  padding: 30px 40px;
+  border-radius: 15px;
+  max-width: 500px;
+  width: 90%;
+  max-height: 80vh;
+  overflow-y: auto;
+  text-align: center;
+  box-shadow: 0 20px 50px rgba(0,0,0,0.7);
+  transform: scale(0.8);
+  opacity: 0;
+  transition: transform 0.3s ease, opacity 0.3s ease;
+}
+
+.modal-bg.active .modal {
+  transform: scale(1);
+  opacity: 1;
+}
+
+.modal h2 {
+  font-size: 1.4rem;
+  color: #1E90FF;
+  margin-top:0;
+}
+
+.modal ul {
+  text-align:left;
+  margin: 20px 0;
+  padding-left: 20px;
+}
+
+.modal ul li {
+  margin:10px 0;
+  line-height: 1.5;
+  font-size: 1rem;
+}
+
+.btn {
+  padding: 12px 25px;
+  background: linear-gradient(135deg, #1E90FF, #00BFFF);
+  color: #fff;
+  border: none;
+  border-radius: 8px;
+  cursor: pointer;
+  font-weight: bold;
+  font-size: 1rem;
+  margin-top: 15px;
+  transition: transform 0.2s, box-shadow 0.2s;
+}
+
+.btn:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 8px 20px rgba(0,0,0,0.4);
+}
 </style>
 </head>
 <body>
 
-<!-- ✅ SERVER-SIDE PRELOADER -->
+<!-- =========================
+     PRELOADER
+========================= -->
 <div id="preloader">
-  <img class="logo-loader" src="./icon.png" alt="Loading...">
+  <img src="./icon.png" class="logo-loader" alt="Loading">
+</div>
+
+<!-- =========================
+     EXAM GUIDELINE MODAL
+========================= -->
+<div class="modal-bg" id="guidelineModal">
+  <div class="modal">
+    <h2>Test Guidelines</h2>
+    <ul>
+      <li>Each test consists of 60 random questions.</li>
+      <li>You have 30 minutes to complete the exam.</li>
+      <li>Click "Start Exam" when ready.</li>
+      <li>Retry is only allowed if your score is below 50%.</li>
+      <li>Preview correct answers is available only for passing grades.</li>
+      <li>Answer all questions carefully.</li>
+      <li>
+  Need help? Contact the app developer on 
+  <a href="#" id="whatsappLink" style="color:#1E90FF;text-decoration:none;">WhatsApp link</a>
+</li>
+
+<div id="waModal" class="wa-modal">
+  <div class="wa-box">
+    <h3>Connect Online</h3>
+    <br> <p>Developer WhatsApp number:</p>
+    <b id="waNumber"><a href="tel:+2348138605126" style="color:white">+234 813 860 5126
+  </a></b>
+    <div class="wa-actions">
+      <button id="tryBtn">Try it</button>
+      <button id="closeBtn">Close</button>
+    </div>
+
+    <small>📋 Number copied automatically</small>
+  </div>
+</div>
+      <style>
+.wa-modal{
+  position:fixed;
+  inset:0;
+  background:rgba(0,0,0,.7);
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  opacity:0;
+  pointer-events:none;
+  transition:.3s;
+  z-index:9999;
+}
+
+.wa-modal.active{
+  opacity:1;
+  pointer-events:auto;
+}
+
+.wa-box{
+  background:#1f1f1f;
+  color:#fff;
+  padding:25px;
+  border-radius:14px;
+  width:90%;
+  max-width:340px;
+  text-align:center;
+  box-shadow:0 15px 40px rgba(0,0,0,.6);
+  animation:scaleIn .3s ease;
+}
+
+@keyframes scaleIn{
+  from{transform:scale(.85);opacity:0}
+  to{transform:scale(1);opacity:1}
+}
+
+.wa-box h3{
+  margin-top:0;
+  color:#1E90FF;
+}
+
+.wa-actions{
+  display:flex;
+  gap:10px;
+  margin-top:15px;
+}
+
+.wa-actions button{
+  flex:1;
+  padding:10px;
+  border:none;
+  border-radius:8px;
+  font-weight:bold;
+  cursor:pointer;
+}
+
+#tryBtn{
+  background:#1E90FF;
+  color:#fff;
+}
+
+#closeBtn{
+  background:#444;
+  color:#fff;
+}
+
+small{
+  display:block;
+  margin-top:10px;
+  opacity:.8;
+}
+</style>
+      <script>
+const waLink = document.getElementById("whatsappLink");
+const waModal = document.getElementById("waModal");
+const tryBtn = document.getElementById("tryBtn");
+const closeBtn = document.getElementById("closeBtn");
+const waNumber = "+2348138605126";
+
+// Show modal + copy number
+waLink.addEventListener("click", e => {
+  e.preventDefault();
+  waModal.classList.add("active");
+
+  // Copy number automatically
+  if(navigator.clipboard){
+    navigator.clipboard.writeText(waNumber).catch(()=>{});
+  }
+});
+
+// Try opening WhatsApp (requires internet)
+tryBtn.addEventListener("click", () => {
+  const url =
+    "https://wa.me/message/UKRVOLM35THWA1";
+  window.open(url, "_self");
+});
+
+// Close modal
+closeBtn.addEventListener("click", () => {
+  waModal.classList.remove("active");
+});
+</script>
+    </ul>
+    <button class="btn" id="startExamBtn">Get start</button>
+  </div>
 </div>
 
 <script>
-/*
- * Server-Side Smart Preloader:
- * - Waits for window load or server signal.
- * - Uses fade-out + visibility transition.
- * - Automatically hides when server finishes rendering.
- */
+let theme = "light";
+let flashInterval;
+const pulseDuration = 1600; // synced with logo pulse
+const preloadTime = 6000;   // total preloader time
+
+function startAccentFlashing() {
+  flashInterval = setInterval(() => {
+    theme = theme === "light" ? "dark" : "light";
+    document.documentElement.setAttribute("data-theme", theme);
+  }, pulseDuration);
+}
+
+function lockThemeAndShowModal() {
+  clearInterval(flashInterval);
+  document.getElementById("preloader").classList.add("hide");
+
+  // Show modal after preloader finishes
+  const modalBg = document.getElementById("guidelineModal");
+  modalBg.classList.add("active");
+}
 
 window.addEventListener("load", () => {
-  const preloader = document.getElementById("preloader");
-  const body = document.body;
-
-  // Add a slight delay for visual polish
-  setTimeout(() => {
-    preloader.classList.add("hide");
-    body.classList.add("loaded");
-  }, 4000);
+  startAccentFlashing();
+  setTimeout(lockThemeAndShowModal, preloadTime);
 });
 
-// Optional: if backend sends a "ready" event via JS injection
-// (For frameworks like Flask or Node with streaming templates)
-window.serverReady = function() {
-  const preloader = document.getElementById("preloader");
-  document.body.classList.add("loaded");
-  preloader.classList.add("hide");
-};
+// =========================
+// Start Exam Button
+// =========================
+document.getElementById("startExamBtn").addEventListener("click", () => {
+  const modalBg = document.getElementById("guidelineModal");
+  modalBg.classList.remove("active");
+  modalBg.querySelector(".modal").style.transform = 'scale(0.8)';
+  modalBg.querySelector(".modal").style.opacity = '0';
+
+  setTimeout(() => {
+    window.location.href = "exam.html"; // exam page
+  }, 350);
+});
+
 </script>
 
 </body>
